@@ -1,6 +1,9 @@
 # gallery_lib/controller.py
+from bs4 import BeautifulSoup
+import requests
+import folium
 
-# FUNKCJE DLA GALERII SZTUKI
+# --- GALERIE ---
 def read_galleries(galleries):
     for i, g in enumerate(galleries):
         print(f"{i} - {g['nazwa']}, Typ: {g['typ_sztuki']}, Lokalizacja: {g['lokalizacja']}")
@@ -26,8 +29,7 @@ def update_gallery(galleries):
         galleries[index]["typ_sztuki"] = input("Podaj nowy typ sztuki: ")
         galleries[index]["lokalizacja"] = input("Podaj nową lokalizację: ")
 
-
-# FUNKCJE DLA WYSTAW
+# --- WYSTAWY ---
 def read_exhibitions(exhibitions):
     for i, e in enumerate(exhibitions):
         print(f"{i} - {e['nazwa']}, Tematyka: {e['tematyka']}, Lokalizacja: {e['lokalizacja']}")
@@ -53,16 +55,15 @@ def update_exhibition(exhibitions):
         exhibitions[index]["tematyka"] = input("Podaj nową tematykę: ")
         exhibitions[index]["lokalizacja"] = input("Podaj nową lokalizację: ")
 
-
-# FUNKCJE DLA PRACOWNIKÓW
+# --- PRACOWNICY ---
 def read_employees(employees):
     for i, em in enumerate(employees):
-        print(f"{i} - {em['imie']} {em['nazwisko']}, Stanowisko: {em['stanowisko']}, Miejsce: {em['miejsce']}")
+        print(f"{i} - {em['imie']} {em['nazwisko']}, Tel: {em['telefon']}, Stanowisko: {em['stanowisko']}")
 
 def add_employee(employees):
     imie = input("Imię: ")
     nazwisko = input("Nazwisko: ")
-    tel = input("Telefon: ")
+    tel = input("Numer telefonu (format 000-000-000): ")
     stanowisko = input("Stanowisko: ")
     miejsce = input("Miejsce pracy: ")
     typ_miejsca = input("Typ miejsca (galeria/wystawa): ")
@@ -86,22 +87,21 @@ def update_employee(employees):
     if 0 <= index < len(employees):
         employees[index]["imie"] = input("Nowe imię: ")
         employees[index]["nazwisko"] = input("Nowe nazwisko: ")
-        employees[index]["telefon"] = input("Nowy telefon: ")
+        employees[index]["telefon"] = input("Nowy numer telefonu (format 000-000-000): ")
         employees[index]["stanowisko"] = input("Nowe stanowisko: ")
         employees[index]["miejsce"] = input("Nowe miejsce pracy: ")
         employees[index]["typ_miejsca"] = input("Nowy typ miejsca: ")
         employees[index]["dom"] = input("Nowa miejscowość zamieszkania: ")
 
-
-# FUNKCJE DLA GOŚCIE
+# --- GOŚCIE ---
 def read_guests(guests):
     for i, g in enumerate(guests):
-        print(f"{i} - {g['imie']} {g['nazwisko']}, Bilet: {g['typ_bilet']}, Cel: {g['miejsce']}")
+        print(f"{i} - {g['imie']} {g['nazwisko']}, Tel: {g['telefon']}, Bilet: {g['typ_bilet']}")
 
 def add_guest(guests):
     imie = input("Imię: ")
     nazwisko = input("Nazwisko: ")
-    tel = input("Telefon: ")
+    tel = input("Numer telefonu (format 000-000-000): ")
     bilet = input("Typ biletu: ")
     miejsce = input("Miejsce wizyty: ")
     typ_miejsca = input("Typ miejsca (galeria/wystawa): ")
@@ -123,7 +123,41 @@ def update_guest(guests):
     if 0 <= index < len(guests):
         guests[index]["imie"] = input("Nowe imię: ")
         guests[index]["nazwisko"] = input("Nowe nazwisko: ")
-        guests[index]["telefon"] = input("Nowy telefon: ")
+        guests[index]["telefon"] = input("Nowy numer telefonu (format 000-000-000): ")
         guests[index]["typ_bilet"] = input("Nowy typ biletu: ")
         guests[index]["miejsce"] = input("Nowe miejsce wizyty: ")
         guests[index]["typ_miejsca"] = input("Nowy typ miejsca: ")
+
+
+def get_coordinates(location: str) -> list:
+    url = f"https://pl.wikipedia.org/wiki/{location}"
+    response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+    response_html = BeautifulSoup(response.text, 'html.parser')
+    latitude = float(response_html.select(".latitude")[1].text.replace(",", "."))
+    longitude = float(response_html.select(".longitude")[1].text.replace(",", "."))
+    return [latitude, longitude]
+
+
+def get_map(galleries: list, exhibitions: list) -> None:
+    m = folium.Map([52.23, 21], zoom_start=6)
+
+    # Mapowanie galerii
+    for g in galleries:
+        folium.Marker(
+            location=get_coordinates(g["lokalizacja"]),
+            tooltip=g["nazwa"],
+            popup=g["typ_sztuki"],
+            icon=folium.Icon(icon="cloud"),
+        ).add_to(m)
+
+    # Mapowanie wystaw
+    for e in exhibitions:
+        folium.Marker(
+            location=get_coordinates(e["lokalizacja"]),
+            tooltip=e["nazwa"],
+            popup=e["tematyka"],
+            icon=folium.Icon(icon="cloud"),
+        ).add_to(m)
+
+    m.save("mapa_lokalizacji.html")
+    print("Mapa została pomyślnie wygenerowana i zapisana jako: mapa_lokalizacji.html")
