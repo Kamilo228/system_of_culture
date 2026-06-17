@@ -74,7 +74,7 @@ galleries = [
 ]
 
 exhibitions = [
-    Exhibition("Złoty Wiek Gdańska", "Malarstwo Historyczne", "Gdańsk"),
+    Exhibition("Złoty Wiek", "Malarstwo Historyczne", "Olsztyn"),
     Exhibition("Beksiński Nieznany", "Surrealizm", "Wrocław")
 ]
 
